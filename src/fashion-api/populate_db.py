@@ -27,7 +27,6 @@ class ClothingItemDB(Base):
     usage = Column(String)
     productDisplayName = Column(String)
     price = Column(Float)
-    image_filename = Column(String, nullable=True)
 
 def create_db_and_tables():
     """Create the SQLite database and tables if they don't exist."""
@@ -52,8 +51,6 @@ def populate_database_from_csv(product_details_csv_path, product_prices_csv_path
     try:
         print("Populating database...")
         for index, row in merged_df.iterrows():
-            image_file_name_for_item = f"{row['id']}.jpg" # <--- DETERMINE THE FILENAME
-
             item = ClothingItemDB(
                 id=row['id'],
                 gender=row['gender'],
@@ -64,8 +61,7 @@ def populate_database_from_csv(product_details_csv_path, product_prices_csv_path
                 season=row['season'],
                 usage=row['usage'],
                 productDisplayName=row['productDisplayName'],
-                price=row['price'],
-                image_filename=image_file_name_for_item  # <--- POPULATE IT
+                price=row['price']
             )
             db.add(item)
         db.commit()
@@ -75,6 +71,23 @@ def populate_database_from_csv(product_details_csv_path, product_prices_csv_path
         print(f"Error populating database: {e}")
     finally:
         db.close()
+
+def create_placeholder_images(num_images):
+    """Create placeholder images and save them in static/images directory."""
+    if not os.path.exists(IMAGES_DIR):
+        os.makedirs(IMAGES_DIR, exist_ok=True)
+
+    print(f"Creating {num_images} placeholder images in {IMAGES_DIR}...")
+    for i in range(1, num_images + 1):
+        img = Image.new('RGB', (224, 224), color='lightgrey')
+        d = ImageDraw.Draw(img)
+        try:
+            font = ImageFont.truetype("arial.ttf", 40) # Use arial font, you might need to adjust path or font name
+        except IOError:
+            font = ImageFont.load_default() # Fallback to default font
+        d.text((50, 100), f"Item ID {i}", fill=(0, 0, 0), font=font)
+        img.save(os.path.join(IMAGES_DIR, f"{i}.jpg"))
+    print("Placeholder images created.")
 
 if __name__ == "__main__":
     product_details_csv = '../../datasets/styles_filtered.csv'
